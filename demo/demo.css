@@ -1,0 +1,148 @@
+/* The about page's product tour, a HyperFrames composition (index.html, 1080×1080; demo.js
+   builds and times it). In the app's soft style (apps/web/src/styles/tokens.css): Figtree, pale
+   grey ground, white round cards, lime for next and correct, flat. The map itself is drawn on a
+   canvas by demo.js; this lays out the words and the phone around it. */
+/* Figtree (SIL OFL 1.1), the same files the app self-hosts, kept beside the tour so it plays anywhere. */
+@font-face {
+  font-family: "Figtree"; font-style: normal; font-display: block; font-weight: 300 900;
+  src: url(fonts/figtree-latin-wght-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+  font-family: "Figtree"; font-style: normal; font-display: block; font-weight: 300 900;
+  src: url(fonts/figtree-latin-ext-wght-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+:root {
+  --paper: #f2f1ed; --paper-2: #e9e8e3; --tile: #e4e3de; --surface: #fff; --rule: #e1e0db;
+  --ink: #151515; --ink-soft: #484845; --ink-faint: #6b6b67; --ink-fainter: #bdbcb7; --grey: #8d8c86;
+  --lime: #8ed643; --lime-ink: #447202;
+  --lift: 0 60px 90px -50px rgba(21,21,21,.45), 0 2px 8px rgba(21,21,21,.06);
+  --sans: "Figtree", "Helvetica Neue", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { overflow: hidden; background: var(--paper); }
+body { color: var(--ink); font: 400 16px/1.4 var(--sans); -webkit-font-smoothing: antialiased; }
+img { display: block; object-fit: cover; }
+#root { position: relative; overflow: hidden; background: var(--paper); }
+.wide { width: 1920px; height: 1080px; }
+.square { width: 1080px; height: 1080px; }
+.cv { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 1; }
+/* The lens vignette: a small copy of the map, so soft when stretched, shown only toward the edges. */
+.bv { position: absolute; left: -1%; top: -1%; width: 102%; height: 102%; z-index: 1; pointer-events: none; }
+.wide .bv { -webkit-mask-image: linear-gradient(to right, transparent 90%, #000 100%), linear-gradient(to bottom, transparent 91%, #000 100%), linear-gradient(to top, transparent 93%, #000 100%); mask-image: linear-gradient(to right, transparent 90%, #000 100%), linear-gradient(to bottom, transparent 91%, #000 100%), linear-gradient(to top, transparent 93%, #000 100%); }
+.square .bv { -webkit-mask-image: linear-gradient(to right, #000, transparent 8%, transparent 92%, #000), linear-gradient(to bottom, #000, transparent 8%, transparent 92%, #000); mask-image: linear-gradient(to right, #000, transparent 8%, transparent 92%, #000), linear-gradient(to bottom, #000, transparent 8%, transparent 92%, #000); }
+.pre { position: absolute; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+/* ── The phone: the square's game, then its lesson ─────────────────────── */
+.phone { position: absolute; z-index: 4; left: 0; top: 0; width: 414px; height: 868px; border: 12px solid var(--ink); border-radius: 66px; background: #fff; box-shadow: 0 80px 120px -60px rgba(21,21,21,.55), 0 4px 14px rgba(21,21,21,.08); overflow: hidden; transform-origin: 0 0; }
+.scr { position: absolute; left: 0; top: 0; width: 390px; height: 844px; overflow: hidden; background: #fff; opacity: 0; --surface: #f3f2ee; }
+.sb { position: absolute; z-index: 9; left: 0; right: 0; top: 0; height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 6px 34px 0 40px; font: 600 16px/1 var(--sans); }
+.sb::after { content: ""; position: absolute; left: 50%; top: 11px; width: 116px; height: 33px; margin-left: -58px; border-radius: 20px; background: var(--ink); }
+.sb svg { width: 62px; height: 13px; }
+.gh { position: absolute; left: 16px; right: 16px; top: 62px; height: 44px; display: flex; align-items: center; justify-content: space-between; }
+.ib { width: 44px; height: 44px; border-radius: 999px; background: var(--surface); display: grid; place-items: center; }
+.ib svg { width: 20px; height: 20px; }
+.dots { display: flex; gap: 6px; align-items: center; font: 500 14px/1 var(--sans); color: var(--ink-faint); }
+.dots i { width: 9px; height: 9px; border-radius: 999px; background: var(--ink); }
+.dots i.o { background: var(--ink-fainter); }
+.dots span { margin-left: 8px; }
+.gt { position: absolute; left: 20px; right: 20px; top: 124px; font: 600 26px/1.15 var(--sans); letter-spacing: -.02em; }
+.cta { position: absolute; left: 16px; right: 16px; bottom: 26px; height: 58px; border-radius: 999px; background: var(--lime); display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 18px/1 var(--sans); }
+.ok { position: absolute; left: 16px; right: 16px; bottom: 26px; height: 58px; border-radius: 999px; background: var(--lime); display: flex; align-items: center; justify-content: center; gap: 10px; font: 600 18px/1 var(--sans); opacity: 0; }
+.ok svg { width: 20px; height: 20px; }
+/* Origins */
+.og-pic { position: absolute; left: 16px; top: 172px; width: 358px; height: 240px; border-radius: 22px; }
+.og-l { position: absolute; left: 20px; font: 600 16px/1 var(--sans); }
+.og-map { position: absolute; left: 16px; top: 452px; width: 358px; height: 166px; border-radius: 22px; background: var(--surface); overflow: hidden; }
+.og-map img { width: 358px; height: 166px; object-fit: fill; opacity: .8; }
+.pin { position: absolute; width: 26px; height: 32px; margin: -32px 0 0 -13px; }
+.og-yr { position: absolute; right: 20px; top: 636px; font: 600 26px/1 var(--sans); letter-spacing: -.02em; }
+.og-track { position: absolute; left: 20px; right: 20px; top: 684px; height: 6px; border-radius: 999px; background: var(--rule); }
+.og-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; border-radius: 999px; background: var(--ink); transform-origin: 0 50%; }
+.og-knob { position: absolute; top: -12px; left: -15px; width: 30px; height: 30px; border-radius: 999px; background: #fff; box-shadow: 0 0 0 2.5px var(--ink); }
+.og-ends { position: absolute; left: 20px; right: 20px; top: 704px; display: flex; justify-content: space-between; font: 400 13px/1 var(--sans); color: var(--ink-faint); }
+/* Lesson */
+.ls-bar { position: absolute; left: 76px; right: 76px; top: 82px; height: 6px; border-radius: 999px; background: var(--rule); overflow: hidden; }
+.ls-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; border-radius: 999px; background: var(--ink); transform-origin: 0 50%; }
+.ls-pic { position: absolute; left: 16px; top: 128px; width: 358px; height: 300px; border-radius: 26px; overflow: hidden; }
+.ls-pic img { width: 100%; height: 100%; }
+.ls-k { position: absolute; left: 20px; top: 456px; font: 600 15px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); }
+.ls-h { position: absolute; left: 20px; right: 20px; top: 482px; font: 600 36px/1.04 var(--sans); letter-spacing: -.035em; }
+.ls-p { position: absolute; left: 20px; right: 20px; font: 400 19px/1.42 var(--sans); color: var(--ink-soft); }
+.lens { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 999px; box-shadow: 0 0 0 4px #fff, 0 0 0 999px rgba(21,21,21,.42); }
+.lens-tag { position: absolute; height: 36px; padding: 0 14px; border-radius: 999px; background: var(--lime); font: 600 16px/36px var(--sans); white-space: nowrap; }
+.opt { position: absolute; left: 16px; width: 358px; height: 66px; border-radius: 20px; background: var(--surface); display: flex; align-items: center; justify-content: space-between; padding: 0 22px; font: 600 19px/1 var(--sans); }
+.opt i { width: 28px; height: 28px; border-radius: 999px; box-shadow: inset 0 0 0 2px var(--ink-fainter); display: grid; place-items: center; }
+.opt i svg { width: 16px; height: 16px; opacity: 0; }
+.opt-on { position: absolute; inset: 0; border-radius: inherit; background: var(--lime); opacity: 0; }
+.learnt { position: absolute; left: 115px; top: 214px; width: 160px; height: 160px; background: var(--tile); overflow: hidden; }
+.learnt img { width: 100%; height: 100%; opacity: 0; }
+.learnt-ring { position: absolute; left: 107px; top: 206px; width: 176px; height: 176px; box-shadow: 0 0 0 6px var(--lime); opacity: 0; }
+/* Level */
+.lv-k { position: absolute; left: 20px; top: 124px; font: 600 15px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); }
+.lv-h { position: absolute; left: 20px; top: 148px; font: 600 38px/1 var(--sans); letter-spacing: -.035em; }
+.lv-card { position: absolute; left: 16px; right: 16px; top: 214px; height: 236px; border-radius: 26px; background: var(--surface); overflow: hidden; }
+.lv-card small { position: absolute; left: 22px; top: 24px; font: 600 16px/1 var(--sans); color: var(--ink-faint); }
+.lv-n { position: absolute; left: 20px; top: 52px; height: 112px; overflow: hidden; font: 600 112px/1 var(--sans); letter-spacing: -.06em; }
+.lv-n span { display: block; height: 112px; }
+.lv-up { position: absolute; right: 22px; top: 22px; height: 34px; padding: 0 14px; border-radius: 999px; background: var(--lime); font: 700 15px/34px var(--sans); }
+.lv-track { position: absolute; left: 22px; right: 22px; bottom: 30px; height: 12px; border-radius: 999px; background: var(--rule); overflow: hidden; }
+.lv-track i { position: absolute; inset: 0; border-radius: 999px; background: var(--ink); transform-origin: 0 50%; }
+.lv-row { position: absolute; left: 16px; right: 16px; height: 70px; border-radius: 20px; background: var(--surface); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; font: 600 18px/1.2 var(--sans); }
+.lv-row span { font: 500 16px/1 var(--sans); color: var(--ink-faint); }
+.lv-row em { width: 30px; height: 30px; border-radius: 999px; background: var(--lime); display: grid; place-items: center; font-style: normal; }
+.lv-row em svg { width: 16px; height: 16px; }
+/* Next */
+.nx { position: absolute; left: 16px; right: 16px; height: 112px; padding: 18px 20px; border-radius: 22px; background: var(--surface); }
+.nx-on { position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 3px var(--ink); opacity: 0; }
+.nx b { display: inline-block; height: 28px; padding: 0 11px; border-radius: 999px; font: 700 13px/28px var(--sans); letter-spacing: .05em; text-transform: uppercase; }
+.nx p { margin-top: 12px; font: 600 21px/1.1 var(--sans); letter-spacing: -.02em; }
+.nx span { display: block; margin-top: 5px; font: 400 15px/1.2 var(--sans); color: var(--ink-faint); }
+/* Ask anything: the search above the map */
+.ask { position: absolute; z-index: 3; left: 64px; top: 192px; width: 700px; height: 76px; display: flex; align-items: center; gap: 16px; padding: 0 10px 0 26px; border-radius: 999px; background: var(--surface); box-shadow: var(--lift); opacity: 0; }
+.ask svg { width: 26px; height: 26px; flex: none; color: var(--ink-faint); }
+.ask__q { flex: 1; font: 500 28px/1 var(--sans); letter-spacing: -.02em; white-space: nowrap; overflow: hidden; }
+.ask__q::after { content: ""; display: inline-block; width: 2px; height: 30px; margin-left: 3px; vertical-align: -5px; background: var(--ink); }
+.ask__b { height: 56px; padding: 0 24px; border-radius: 999px; background: var(--lime); font: 600 21px/56px var(--sans); }
+/* Rank */
+.rk { position: absolute; left: 16px; right: 16px; height: 66px; border-radius: 18px; background: var(--surface); display: flex; align-items: center; gap: 14px; padding: 0 18px; font: 600 19px/1 var(--sans); }
+.rk span { margin-left: auto; font: 500 16px/1 var(--sans); color: var(--ink-faint); }
+.rk i { width: 28px; height: 28px; border-radius: 999px; background: var(--paper-2); display: grid; place-items: center; font: 700 14px/1 var(--sans); font-style: normal; }
+/* True or false */
+.tf-card { position: absolute; left: 16px; right: 16px; top: 176px; height: 210px; border-radius: 26px; background: var(--surface); padding: 26px 24px; font: 600 27px/1.25 var(--sans); letter-spacing: -.02em; }
+.tf { position: absolute; top: 408px; width: 172px; height: 84px; border-radius: 22px; background: var(--surface); display: grid; place-items: center; font: 600 22px/1 var(--sans); }
+/* The square in play: what it is, its level, what learning it opened up */
+.info { position: absolute; z-index: 4; left: 0; top: 0; width: 440px; padding: 22px 24px 24px; border-radius: 30px; background: var(--surface); box-shadow: var(--lift); opacity: 0; }
+.info__top { display: flex; align-items: center; gap: 16px; }
+.info__pic { width: 76px; height: 76px; flex: none; border-radius: 4px; background-size: cover; background-position: center; }
+.info small { display: block; font: 600 17px/1.2 var(--sans); color: var(--ink-faint); }
+.info b { display: block; margin-top: 4px; font: 600 25px/1.12 var(--sans); letter-spacing: -.02em; }
+.info__lv { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; font: 600 19px/1 var(--sans); }
+.info__n { display: inline-block; height: 21px; overflow: hidden; vertical-align: -3px; }
+.info__n i { display: block; height: 21px; font-style: normal; }
+.info__up { height: 32px; padding: 0 14px; border-radius: 999px; background: var(--lime); font: 700 15px/32px var(--sans); }
+.info__bar { position: relative; margin-top: 12px; height: 10px; border-radius: 999px; background: var(--paper-2); overflow: hidden; }
+.info__bar i { position: absolute; inset: 0; border-radius: 999px; background: var(--ink); transform-origin: 0 50%; }
+.info__un { height: 0; overflow: hidden; }
+.info__un small { margin-top: 22px; }
+.info__row { display: flex; align-items: center; gap: 12px; margin-top: 12px; font: 600 19px/1.15 var(--sans); }
+.info__tile { width: 38px; height: 38px; flex: none; background-repeat: no-repeat; }
+.info__row em { margin-left: auto; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--paper-2); font: 700 12px/26px var(--sans); font-style: normal; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-soft); }
+/* Learnt: the picture, its square drawing round it, then the word */
+.rw-sq { position: absolute; left: 95px; top: 150px; width: 200px; height: 200px; overflow: hidden; }
+.rw-sq img { width: 100%; height: 100%; }
+.rw-ring { position: absolute; left: 79px; top: 134px; width: 232px; height: 232px; overflow: visible; }
+.rw-ring rect { fill: none; stroke: var(--lime); stroke-width: 10; }
+.rw-spark { position: absolute; left: 195px; top: 250px; width: 14px; height: 14px; margin: -7px 0 0 -7px; background: var(--lime); }
+.rw-h { position: absolute; left: 0; right: 0; top: 412px; text-align: center; font: 600 52px/1 var(--sans); letter-spacing: -.045em; }
+.rw-p { position: absolute; left: 0; right: 0; top: 478px; text-align: center; font: 500 19px/1.3 var(--sans); color: var(--ink-soft); }
+/* Ask anything, in the app */
+.sr-h { position: absolute; left: 20px; top: 122px; font: 600 36px/1 var(--sans); letter-spacing: -.035em; }
+.sr-f { position: absolute; left: 16px; right: 16px; top: 182px; height: 64px; border-radius: 999px; background: var(--surface); display: flex; align-items: center; gap: 12px; padding: 0 8px 0 20px; }
+.sr-f svg { width: 21px; height: 21px; flex: none; color: var(--ink-faint); }
+.sr-q { flex: 1; font: 500 18px/1 var(--sans); white-space: nowrap; overflow: hidden; }
+.sr-q::after { content: ""; display: inline-block; width: 2px; height: 20px; margin-left: 2px; vertical-align: -4px; background: var(--ink); }
+.sr-go { height: 48px; padding: 0 18px; border-radius: 999px; background: var(--lime); font: 600 16px/48px var(--sans); }
+.sr-k { position: absolute; left: 20px; top: 280px; font: 600 15px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); }
+.sr-s { position: absolute; left: 16px; right: 16px; height: 58px; border-radius: 18px; background: var(--surface); display: flex; align-items: center; padding: 0 18px; font: 500 17px/1.2 var(--sans); color: var(--ink-soft); }
