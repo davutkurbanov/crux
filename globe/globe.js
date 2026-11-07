@@ -30,7 +30,7 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const tune = {
   look: num('look', 74), lens: .46, turn: 0, sway: 0, wash: .07, horizon: .45,   // camera (look, turn in degrees)
   known: .4, spread: 1.9, strength: 3.1, shade: 3, seams: 0, wave: 1,                // land
-  pace: 1, haze: .37, paused: false, side: 'auto', names: 14,                        // the loop
+  pace: num('pace', 1), haze: .37, paused: false, side: 'auto', names: 14,                        // the loop
 };
 let running = false, onScreen = true, last = 0, raf = 0;   // the loop's state
 
@@ -136,8 +136,13 @@ function staticAt(i) {
   const u = (r - b[2] + (s - bh) / 2) / s, v = (wrapC(c - regions[g].seed[0]) - b[0] + (s - bw) / 2) / s;
   const [ox, oy] = cellOrigin(f), cs = AT.cell / s;
   const other = j => j >= 0 && regionOf[j] !== g ? 1 : 0;
-  const seams = other(mod(c - 1, RING) * ROWS + r) + 2 * other(mod(c + 1, RING) * ROWS + r) + 4 * other(r > 0 ? i - 1 : -1) + 8 * other(r < ROWS - 1 ? i + 1 : -1);
-  statics.set([thetaOf(c), phiOf(r), (ox + AT.cell * u) / ATW, (oy + AT.cell * v) / ATW, cs / ATW, cs / ATW, depth[i], seams], i * 8);
+  const at = (dc, dr) => (r + dr < 0 || r + dr >= ROWS) ? -1 : mod(c + dc, RING) * ROWS + r + dr;
+  const seams = other(at(-1, 0)) + 2 * other(at(1, 0)) + 4 * other(at(0, -1)) + 8 * other(at(0, 1));
+  // and where the region turns in on itself (both sides its own, the corner not), so a border drawn
+  // along its edge closes over that corner: 16, 32, 64, 128 for (-1,-1), (1,-1), (-1,1), (1,1)
+  const own = j => j >= 0 && regionOf[j] === g;
+  const turns = [[-1, -1], [1, -1], [-1, 1], [1, 1]].reduce((m, [dc, dr], q) => m + (own(at(dc, 0)) && own(at(0, dr)) && other(at(dc, dr)) ? 16 << q : 0), 0);
+  statics.set([thetaOf(c), phiOf(r), (ox + AT.cell * u) / ATW, (oy + AT.cell * v) / ATW, cs / ATW, cs / ATW, depth[i], seams + turns], i * 8);
 }
 for (let i = 0; i < N; i++) staticAt(i);
 
@@ -295,8 +300,12 @@ void main(){
   float lay = 1.0 + 2.2 * pow(g - 1.0, 3.0) + 1.2 * pow(g - 1.0, 2.0);   // ease out, a touch past full, back
   vDevelop = smoothstep(0.0, 1.0, (uGrow.x - 1.7 - far * 3.0 - jit * 0.6) / 1.1);
   if (g <= 0.0) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
-  vec2 k = aCorner * 1.004 * lay;   // a hair over, so neighbours meet with no crack
+  // the field in play: as its wave reaches a square, the square pops up a little and settles, as a
+  // Today block lifts when it is lit (aRec.w runs .51 to 1.5 over the square's own turn, markRegion)
+  float pop = int(aRec.x + 0.5) == 4 && aRec.w > 0.5 ? sin(3.14159265 * clamp((aRec.w - 0.51) / 0.99, 0.0, 1.0)) : 0.0;
+  vec2 k = aCorner * 1.004 * lay * (1.0 + 0.22 * pop);   // a hair over, so neighbours meet with no crack
   vec3 p = sph(aCell.x + uSpin + k.y * uStep, aCell.y + k.x * uStep);
+  p += nrm(p) * pop * uStep * 0.8;   // and stands proud of its neighbours while it does
   vec3 rel = p - uEye;
   float cz = dot(rel, uFwd);
   gl_Position = vec4(dot(rel, uRight) / uTan.x, dot(rel, uUp) / uTan.y + uShift * cz, (cz * (uFar + uNear) - 2.0 * uFar * uNear) / (uFar - uNear), cz);
@@ -314,6 +323,7 @@ uniform sampler2D uAtlas;
 uniform float uTime, uPics;
 uniform vec3 uPaper, uInk, uSeam, uGap;
 uniform float uSeamK;
+uniform float uDpr;   // device pixels to a CSS pixel, so a border is as wide as the app's
 uniform vec3 uFill[5], uRing[5], uRamp[4];
 out vec4 o;
 float sdRR(vec2 p, vec2 b, float r){ vec2 q = abs(p) - b + r; return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r; }
@@ -342,7 +352,28 @@ void main(){
   int kind = int(vR.x + 0.5);
   if (kind > 0) {
     float pulse = 0.72 + 0.28 * sin(uTime * 2.4 + vR.z);
-    if (vR.w > 0.5) {
+    if (vR.w > 0.5 && kind == 4) {
+      // the field in play, as Today marks the lesson to go on with: a kiwi border round its edge and
+      // a thin white line inside it, closed over the corners where the field turns in on itself;
+      int se = int(vTopo.y + 0.5);
+      // its own turn, 0 to 1: the border draws in past its width and settles (Today's tm-draw), the square
+      // brightens as it pops (tm-wave), and a soft kiwi stays on the field after
+      float tn = clamp((vR.w - 0.51) / 0.99, 0.0, 1.0), pop = sin(3.14159265 * tn);
+      float draw = tn < 0.55 ? 2.0 * tn / 0.55 : 2.0 - (tn - 0.55) / 0.45;
+      col = mix(col, uRing[kind], min(1.0, vR.y / 0.9) * (0.26 + 0.3 * pop));
+      col *= 1.0 + 0.35 * pop;
+      float kw = max(4.0 * uDpr * px, 0.07) * draw, ww = kw * 1.4, e = 0.0, w = 0.0;
+      vec4 dd = vec4(vUV.y + 0.5, 0.5 - vUV.y, vUV.x + 0.5, 0.5 - vUV.x);   // to the c-1, c+1, r-1, r+1 sides
+      vec4 ek = 1.0 - smoothstep(vec4(kw - aa), vec4(kw + aa), dd), ewh = 1.0 - smoothstep(vec4(ww - aa), vec4(ww + aa), dd);
+      for (int q = 0; q < 4; q++) if ((se & (1 << q)) != 0) { e = max(e, ek[q]); w = max(w, ewh[q]); }
+      if ((se & 16) != 0) { e = max(e, ek[0] * ek[2]); w = max(w, ewh[0] * ewh[2]); }
+      if ((se & 32) != 0) { e = max(e, ek[1] * ek[2]); w = max(w, ewh[1] * ewh[2]); }
+      if ((se & 64) != 0) { e = max(e, ek[0] * ek[3]); w = max(w, ewh[0] * ewh[3]); }
+      if ((se & 128) != 0) { e = max(e, ek[1] * ek[3]); w = max(w, ewh[1] * ewh[3]); }
+      float a = min(1.0, vR.y / 0.9); a *= a;   // the border firms up as the field is marked, to full kiwi (markRegion lifts it to .9)
+      col = mix(col, vec3(1.0), a * w * 0.95);
+      col = mix(col, uRing[kind], a * e);
+    } else if (vR.w > 0.5) {
       // a tile of a highlighted region (its field there): a wash of the colour, and the region's edge drawn
       col = mix(col, uFill[kind], vR.y * 0.3 * (0.8 + 0.2 * pulse));
       int se = int(vTopo.y + 0.5);
@@ -421,17 +452,17 @@ const hex = h => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16)
 const C = {
   paper: hex('#f2f1ed'), halo: hex('#fbfaf7'), base: hex('#efeee8'), seam: hex('#f4f3ef'), ink: hex('#151515'), gap: hex('#fbfaf7'),
   // kinds: 1 next (kiwi), 2 gap (coral), 3 frontier (gold)
-  // and 4: the field in play, the region of the tile being learnt
+  // and 4: the field in play, the region of the tile being learnt (kiwi, as Today marks the lesson to go on with)
   fill: [[0, 0, 0], hex('#8ed643'), hex('#ff7267'), hex('#fec84b'), hex('#ffffff')].flat(),
-  ring: [[0, 0, 0], hex('#447202'), hex('#c73834'), hex('#856302'), hex('#151515')].flat(),
+  ring: [[0, 0, 0], hex('#447202'), hex('#c73834'), hex('#856302'), hex('#8ed643')].flat(),
   // the scale for locked tiles, after the Map Studio: unknown (paper), then kiwi in steps to the edge of the known
   ramp: ['#efeee8', '#e5ecd8', '#c2df9a', '#8ed643'].map(hex).flat(),
 };
 // Dark mode (the page's [data-theme], else the system's): the same map at night — dark squares on darker
-// seams, the kiwi steps deepened, the field in play outlined in light. Pictures are the same.
-const LIGHT_C = { paper: C.paper, halo: C.halo, base: C.base, gap: C.gap, ramp: C.ramp, fill4: hex('#ffffff'), ring4: hex('#151515') };
+// seams, the kiwi steps deepened, the field in play in the night kiwi. Pictures are the same.
+const LIGHT_C = { paper: C.paper, halo: C.halo, base: C.base, gap: C.gap, ramp: C.ramp, fill4: hex('#ffffff'), ring4: hex('#8ed643') };
 const DARK_C = { paper: hex('#151515'), halo: hex('#22221f'), base: hex('#1e1e1c'), gap: hex('#141413'),
-  ramp: ['#21211f', '#262c1f', '#3d5426', '#6fad29'].map(hex).flat(), fill4: hex('#3a3a37'), ring4: hex('#f2f1ed') };
+  ramp: ['#21211f', '#262c1f', '#3d5426', '#6fad29'].map(hex).flat(), fill4: hex('#3a3a37'), ring4: hex('#8dcd4f') };
 const isDark = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
 function applyTheme() {
   const T = isDark() ? DARK_C : LIGHT_C;
@@ -607,7 +638,7 @@ function draw() {
   gl.uniform1f(ut.uSpin, spin % TAU); gl.uniform1f(ut.uStep, D); gl.uniform1f(ut.uNear, .001); gl.uniform1f(ut.uFar, 12);
   gl.uniform4fv(ut.uWave, uni.wave); gl.uniform1f(ut.uWaveA, uni.waveA);
   gl.uniform1f(ut.uTime, clock); gl.uniform1f(ut.uPics, uni.pics);
-  gl.uniform3fv(ut.uInk, C.ink); gl.uniform3fv(ut.uGap, C.gap); gl.uniform3fv(ut.uSeam, C.seam); gl.uniform1f(ut.uSeamK, tune.seams); gl.uniform1f(ut.uShadeK, tune.shade);
+  gl.uniform3fv(ut.uInk, C.ink); gl.uniform3fv(ut.uGap, C.gap); gl.uniform3fv(ut.uSeam, C.seam); gl.uniform1f(ut.uSeamK, tune.seams); gl.uniform1f(ut.uDpr, dpr); gl.uniform1f(ut.uShadeK, tune.shade);
   gl.uniform3fv(ut.uFill, C.fill); gl.uniform3fv(ut.uRing, C.ring);
   gl.uniform3fv(ut.uRamp, C.ramp); gl.uniform3f(ut.uGrow, grow.t, grow.th, grow.ph);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex); gl.uniform1i(ut.uAtlas, 0);
@@ -756,7 +787,11 @@ function markRegion(i, kind, amount, delay = 0) {
     if (R[j * 4] > 0 && R[j * 4 + 3] < .5 && R[j * 4 + 1] > .05) continue;   // a pick's own tile keeps its full mark
     if (R[j * 4] !== kind) R[j * 4 + 1] = 0;   // another kind's wash does not carry over into this one
     R[j * 4] = kind; R[j * 4 + 3] = 1; dirty(j);
-    tileTween(R, j, 1, amount, 1.6, delay + gridDist(i, j) * .07, ease.inOut); regionMarks.push(j);
+    const t0 = delay + gridDist(i, j) * .07;
+    tileTween(R, j, 1, amount, 1.6, t0, ease.inOut); regionMarks.push(j);
+    // the field in play also plays each square's own turn (its pop, the border drawing in): the region
+    // flag runs .51 to 1.5, so it still reads as set, and a fade (clearRegions) leaves it where it ended
+    if (kind === 4) { R[j * 4 + 3] = .51; tileTween(R, j, 3, 1.5, .9, t0 + .25, ease.lin); }
   }
 }
 function clearRegions(fade = .4) {
