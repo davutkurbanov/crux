@@ -106,8 +106,6 @@ a { color: inherit; }
 .sec--deep .eyebrow::before { background: var(--lime-night); box-shadow: none; }
 .sec--deep .lede { color: #a3a3a0; }
 .sec--deep .phone { border-color: #000; box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 60px 90px -40px rgba(0,0,0,.8); }
-.sec--deep .gshelf .gp > b { color: #f4f4f2; }
-.sec--deep .gshelf .gp > span { color: #a3a3a0; }
 .sec--deep + .sec { padding-top: 112px; }
 .sec--band + .sec { padding-top: 96px; }
 .head--c { margin: 0 auto; text-align: center; }
@@ -243,13 +241,27 @@ a { color: inherit; }
 .ex__q { margin: 0 0 12px; font: 500 19px/1.2 var(--serif); }
 /* Estimate: the guess rides on the knob; the answer is marked under the track. All in % of the track. */
 
-/* ── Games: one row of the newest game screens, drifting past ── */
-.gcar { width: 100vw; margin: 56px 0 0 calc(50% - 50vw); overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
-.gshelf { display: flex; gap: 32px; width: max-content; padding: 10px 0 24px; will-change: transform; }
-.gshelf .gp { flex: none; text-align: center; }
-.gshelf .phone { --pw: 262px; }
-.gshelf .gp > b { display: block; margin-top: 22px; font: 500 26px/1 var(--serif); letter-spacing: -.025em; }
-.gshelf .gp > span { display: block; max-width: 15em; margin: 8px auto 0; font-size: 14.5px; line-height: 1.4; color: var(--ink-soft); }
+/* ── Games and lessons: every screen at once, Today large in the middle, two columns either side.
+   --s is a side phone, --b the middle one; on a phone the outer four go and the sides run off the edges. ── */
+#play { overflow: hidden; --room-em: var(--lime-night); --room-soft: #a3a3a0; --screen: #121212; --screen-lift: 0 0 0 1px rgba(255,255,255,.12), 0 50px 80px -40px rgba(0,0,0,.8); }
+#play .h2 em { color: var(--room-em); }
+#play .lede { color: var(--room-soft); }
+/* In light the room goes light too, and the screens are the app's light mode (the -light images). */
+:root[data-theme="light"] #play { --room-em: var(--accent-ink); --room-soft: var(--ink-soft); --screen: #f2f1ed; --screen-lift: 0 0 0 1px rgba(21,21,21,.06), 0 50px 80px -40px rgba(21,21,21,.45); background: var(--paper-2); color: var(--ink); }
+@media (prefers-color-scheme: light) { :root:not([data-theme]) #play { --room-em: var(--accent-ink); --room-soft: var(--ink-soft); --screen: #f2f1ed; --screen-lift: 0 0 0 1px rgba(21,21,21,.06), 0 50px 80px -40px rgba(21,21,21,.45); background: var(--paper-2); color: var(--ink); } }
+.dset { --s: 168px; --b: 340px; --gap: 24px; display: flex; align-items: center; justify-content: center; gap: calc(var(--gap) * 3); margin-top: 72px; }
+.dset > * { flex: none; }
+.dset__side { display: grid; grid-template-columns: repeat(2, var(--s)); gap: var(--gap); }
+.dph { --w: var(--s); width: var(--w); aspect-ratio: 408 / 862; box-sizing: border-box; border: calc(var(--w) * .035) solid #000; border-radius: calc(var(--w) * .165); overflow: hidden; background: var(--screen); box-shadow: var(--screen-lift); }
+.dph--big { --w: var(--b); }
+.dph img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+@media (max-width: 1240px) { .dset { --s: 140px; --b: 290px; --gap: 18px; } }
+@media (max-width: 1000px) { .dset { --s: 96px; --b: 210px; --gap: 12px; } }
+@media (max-width: 760px) {
+  .dset { --s: 104px; --b: 230px; gap: 12px; margin-top: 48px; }
+  .dset__side { grid-template-columns: var(--s); }
+  .dph--more { display: none; }
+}
 
 /* The game frame of the earlier landing, in light: the bar, the prompt, the board, a verdict, the button. */
 @keyframes kick { 40% { transform: scale(1.4); color: var(--accent); } }
@@ -688,17 +700,6 @@ a { color: inherit; }
 .phone, .scr { background: #ffffff; }
 .k-ph, .k-ap, .s-soft { --paper: #ffffff; --card: #f3f2ee; --surface: #f3f2ee; }
 .scr [style*="background: #ffffff"], .scr [style*="background:#ffffff"], .scr [style*="background: #fff;"] { background-color: #f3f2ee !important; }
-/* ── Games: each game on its own colour, playing ── */
-.gshelf { gap: 28px; }
-.gshelf .gp { flex: none; width: 330px; }
-.gp__panel { display: grid; place-items: center; padding: 26px 0; border-radius: 38px; background: var(--gc); }
-.gshelf .phone { --pw: 262px; }
-.gp__meta { display: flex; align-items: center; gap: 14px; margin-top: 16px; padding: 0 6px; text-align: left; }
-.gp__ic { width: 48px; height: 48px; flex: none; border-radius: 14px; display: grid; place-items: center; }
-.gp__ic svg { width: 32px; height: 32px; }
-.gp__meta b { display: block; font: 600 20px/1.1 var(--sans); color: var(--ink); letter-spacing: -.01em; }
-.gp__meta small { display: block; margin-top: 4px; font-size: 14px; color: var(--ink-faint); }
-.gcar:hover .gshelf { animation-play-state: paused; }
 
 
 
@@ -988,9 +989,9 @@ a { color: inherit; }
 </div>
 
 
-<!-- ── Games and lessons, right after How it works: the app's own screens, as the 12 October landing
-     showed them (screens/), in this page's type and colours. ── -->
-<div class="v1" data-screens>
+<!-- ── Games and lessons, right after How it works: every screen at once, Today in the middle, the
+     day's four games to its left and four lesson screens to its right (canvas "About page: screens
+     together", board D, 2026-11-07). The screens are pictures (screens/img), drawn for the page. ── -->
 <section class="sec sec--deep" id="play">
   <div class="wrap">
     <div class="head head--c">
@@ -998,22 +999,27 @@ a { color: inherit; }
       <p class="lede rise" style="--i:1">Every lesson starts with a real picture, and every game is a small test. Each answer sharpens your map, and picks what comes next.</p>
     </div>
   </div>
-  <div class="gcar" aria-label="The games and lessons, playing themselves">
-    <div class="gshelf" data-gshelf>
-      <div class="gp"><div class="phone" data-game="def" role="img" aria-label="Definitions: fill the words an article left out."><div class="scr" aria-hidden="true"></div></div></div>
-      <div class="gp"><div class="phone" data-lesson="0" role="img" aria-label="A lesson on Mount Everest: its height measured on a ruler, then an estimate."><div class="scr" aria-hidden="true"></div></div></div>
-      <div class="gp"><div class="phone" data-game="origin" role="img" aria-label="Origin: guess where and when an object was made."><div class="scr" aria-hidden="true"></div></div></div>
-      <div class="gp"><div class="phone" data-game="tl" role="img" aria-label="Timeline: put four inventions in order."><div class="scr" aria-hidden="true"></div></div></div>
-      <div class="gp"><div class="phone" data-lesson="1" role="img" aria-label="A lesson on the octopus: its parts labelled, then put in order."><div class="scr" aria-hidden="true"></div></div></div>
-      <div class="gp"><div class="phone" data-game="hl" role="img" aria-label="Higher or lower: which is taller, longer, bigger?"><div class="scr" aria-hidden="true"></div></div></div>
-      <div class="gp"><div class="phone" data-game="sort" role="img" aria-label="Sort: each card rises from the deck into one of two piles."><div class="scr" aria-hidden="true"></div></div></div>
-      <div class="gp"><div class="phone" data-lesson="2" role="img" aria-label="A lesson on the Great Wave: a lens finds Mount Fuji, then artists are matched to their works."><div class="scr" aria-hidden="true"></div></div></div>
-      <div class="gp"><div class="phone" data-game="overlap" role="img" aria-label="Overlap: place wonders inside two overlapping sets."><div class="scr" aria-hidden="true"></div></div></div>
-      <div class="gp"><div class="phone" data-game="who" role="img" aria-label="Who?: name the person in as few clues as you can."><div class="scr" aria-hidden="true"></div></div></div>
+  <div class="dset">
+    <div class="dset__side">
+      <div class="dph dph--more"><img data-shot="timeline" width="390" height="844" loading="lazy" decoding="async" alt="Timeline: eight events in order, from the first kites to Dolly the sheep."></div>
+      <div class="dph"><img data-shot="where" width="390" height="844" loading="lazy" decoding="async" alt="Where?, finished: perfect, six places out of six."></div>
+      <div class="dph dph--more"><img data-shot="mini" width="390" height="844" loading="lazy" decoding="async" alt="The Mini: a five-by-five crossword, half filled in."></div>
+      <div class="dph"><img data-shot="connections" width="390" height="844" loading="lazy" decoding="async" alt="Connections: horses, mothers and copies found, the last four tiles being picked."></div>
+    </div>
+    <div class="dph dph--big"><img data-shot="today" width="390" height="844" decoding="async" alt="Today: the day's map with a Start button, then four games to play."></div>
+    <div class="dset__side">
+      <div class="dph"><img data-shot="map" width="390" height="844" loading="lazy" decoding="async" alt="A lesson on the Mongols: their empire on a map in 1294."></div>
+      <div class="dph dph--more"><img data-shot="numbers" width="390" height="844" loading="lazy" decoding="async" alt="Toys from before history, told in three numbers."></div>
+      <div class="dph"><img data-shot="horse" width="390" height="844" loading="lazy" decoding="async" alt="Built for the steppe: a Mongolian horse with its parts labelled."></div>
+      <div class="dph dph--more"><img data-shot="chapters" width="390" height="844" loading="lazy" decoding="async" alt="The Mongols lesson and its five chapters."></div>
     </div>
   </div>
 </section>
-</div>
+<script>{ /* each screen in the page's theme: name.webp is the app's dark mode, name-light.webp its light mode */
+  const b = location.pathname.replace(/\/(index\.html)?$/, "");
+  const set = () => { const t = document.documentElement.dataset.theme, dark = t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    document.querySelectorAll("[data-shot]").forEach((i) => { i.src = `${b}/screens/img/${i.dataset.shot}${dark ? "" : "-light"}.webp`; }); };
+  set(); addEventListener("crux-theme", set); }</script>
 
 <section class="sec" id="map">
   <div class="wrap">
