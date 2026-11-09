@@ -450,19 +450,19 @@ for (const p of [skyP, tileP]) {
 }
 const hex = h => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255];
 const C = {
-  paper: hex('#f2f1ed'), halo: hex('#fbfaf7'), base: hex('#efeee8'), seam: hex('#f4f3ef'), ink: hex('#151515'), gap: hex('#fbfaf7'),
+  paper: hex('#f2f2f0'), halo: hex('#f7f7f5'), base: hex('#e8e8e5'), seam: hex('#f2f2f0'), ink: hex('#161615'), gap: hex('#f2f2f0'),
   // kinds: 1 next (kiwi), 2 gap (coral), 3 frontier (gold)
   // and 4: the field in play, the region of the tile being learnt (kiwi, as Today marks the lesson to go on with)
-  fill: [[0, 0, 0], hex('#8ed643'), hex('#ff7267'), hex('#fec84b'), hex('#ffffff')].flat(),
-  ring: [[0, 0, 0], hex('#447202'), hex('#c73834'), hex('#856302'), hex('#8ed643')].flat(),
+  fill: [[0, 0, 0], hex('#78c461'), hex('#ff7267'), hex('#fec84b'), hex('#ffffff')].flat(),
+  ring: [[0, 0, 0], hex('#39652b'), hex('#c73834'), hex('#856302'), hex('#78c461')].flat(),
   // the scale for locked tiles, after the Map Studio: unknown (paper), then kiwi in steps to the edge of the known
-  ramp: ['#efeee8', '#e5ecd8', '#c2df9a', '#8ed643'].map(hex).flat(),
+  ramp: ['#e8e8e5', '#e0ebd9', '#b4dba8', '#78c461'].map(hex).flat(),
 };
 // Dark mode (the page's [data-theme], else the system's): the same map at night — dark squares on darker
 // seams, the kiwi steps deepened, the field in play in the night kiwi. Pictures are the same.
-const LIGHT_C = { paper: C.paper, halo: C.halo, base: C.base, gap: C.gap, ramp: C.ramp, fill4: hex('#ffffff'), ring4: hex('#8ed643') };
-const DARK_C = { paper: hex('#151515'), halo: hex('#22221f'), base: hex('#1e1e1c'), gap: hex('#141413'),
-  ramp: ['#21211f', '#262c1f', '#3d5426', '#6fad29'].map(hex).flat(), fill4: hex('#3a3a37'), ring4: hex('#8dcd4f') };
+const LIGHT_C = { paper: C.paper, halo: C.halo, base: C.base, gap: C.gap, ramp: C.ramp, fill4: hex('#ffffff'), ring4: hex('#78c461') };
+const DARK_C = { paper: hex('#0e0e0d'), halo: hex('#1a1a18'), base: hex('#191918'), gap: hex('#0e0e0d'),
+  ramp: ['#191918', '#1f281c', '#355030', '#68a955'].map(hex).flat(), fill4: hex('#232321'), ring4: hex('#84c870') };
 const isDark = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
 function applyTheme() {
   const T = isDark() ? DARK_C : LIGHT_C;
@@ -609,7 +609,7 @@ function resize() {
 const uni = { wave: [0, 1, 0, 0], waveA: 0, pics: 0 };
 let clock = 0;
 const mix3 = (a, b, t) => a.map((x, j) => x + (b[j] - x) * t);
-const NIGHT = hex('#151515'), GLOW = hex('#3a4a2a');
+const NIGHT = hex('#0e0e0d'), GLOW = hex('#2c4024');
 let paperNow = C.paper;
 function draw() {
   gl.viewport(0, 0, canvas.width, canvas.height);
@@ -770,7 +770,7 @@ function burst(host) {
     const a = Math.PI * (1.08 + j / 13 * .84) + (hash(j, Math.floor(clock * 7)) - .5) * .2, d = 34 + hash(j, 3 + Math.floor(clock)) * 30;
     const s = el('i');
     s.style.setProperty('--x', `${(Math.cos(a) * d * 1.6).toFixed(1)}px`); s.style.setProperty('--y', `${(Math.sin(a) * d).toFixed(1)}px`);
-    s.style.background = ['#8ed643', '#ff7267', '#fec84b', '#8ed643', '#151515'][j % 5];
+    s.style.background = ['#78c461', '#ff7267', '#fec84b', '#78c461', '#151515'][j % 5];
     b.append(s);
   }
   host.append(b);
@@ -904,7 +904,7 @@ function placePlaces() {
   for (const [g, p] of cands) {
     if (places.size >= maxN) break;
     if (shownF.has(regions[g].f) || taken.some(t => Math.abs(t.x - p.x) < 170 && Math.abs(t.y - p.y) < 34)) continue;
-    const e = el('div', 'gl-place', `<span>${letters(F[regions[g].f][1].toUpperCase(), 32)}</span>`);
+    const e = el('div', 'gl-place', `<span>${letters(F[regions[g].f][1], 32)}</span>`);
     placeLayer.append(e);
     e.style.translate = `${p.x.toFixed(1)}px ${p.y.toFixed(1)}px`;
     requestAnimationFrame(() => e.classList.add('is-in'));
@@ -974,7 +974,7 @@ function setIdea(L, f) {
 // join pairs, a dial, lettered cards — laid out, then run from a time; run() says how long it
 // takes and check() marks it right.
 const GAME_NAME = { order: 'Put in order', match: 'Match', estimate: 'Estimate', pick: 'Pick one' };
-const PAIR = ['#8ed643', '#fec84b', '#ff7267', '#d6d5cf'];
+const PAIR = ['#78c461', '#fec84b', '#ff7267', '#d6d5cf'];
 function setupGame(g, board) {
   board.className = 'gl-board gl-board--' + g.k;
   if (g.k === 'order') {
